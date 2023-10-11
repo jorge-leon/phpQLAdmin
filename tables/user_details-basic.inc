@@ -2,8 +2,25 @@
   <table cellspacing="0" cellpadding="3" border="0">
     <th colspan="3" align="left"><?php echo $LANG->_('User data')?></th>
       <tr class="<?php pql_format_table(); ?>">
-        <td class="title"><?php echo $LANG->_('Username')?></td>
-<?php $ref = pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_GET["rootdn"]); ?>
+<?php
+    $ref = pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_GET["rootdn"]);
+    switch($ref) {
+	case "mail":
+        case "uid":
+	    $label = $LANG->_('Username'); break;
+	case "cn":
+	case "commonname":
+	    $label = $LANG->_('User'); break;
+	default:
+	    $label = $LANG->_('User identifier'); break;
+    }
+?>
+        <td class="title"><?php echo $label?></td>
+<?php
+    $ref = pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_GET["rootdn"]);
+    if(is_array($$ref))
+        $$ref = implode(" ", $$ref);
+?>
         <td><?php if(!empty($$ref)) { echo $$ref; } ?></td>
         <td>
 <?php if(@empty($_SESSION["SINGLE_USER"])) { ?>
@@ -81,7 +98,7 @@
 	  $tmp  = "user_edit_attribute.php?rootdn=".$url["rootdn"]."&domain=".$url["domain"]."&attrib=cn";
 	  $tmp .= "&user=".$url["user"]."&view=".$_GET["view"];
 
-	  $txt  = array('tit' => $LANG->_('Surname').", ".$LANG->_('Lastname'),
+	  $txt  = array('tit' => $LANG->_('Firstname').", ".$LANG->_('Lastname'),
 					'add' => $LANG->_('Add name'),
 					'del' => $LANG->_('Delete name'),
 					'mod' => $LANG->_('Modify name'));

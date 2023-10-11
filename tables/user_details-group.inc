@@ -17,7 +17,7 @@ foreach($attribs as $key => $attrib) {
 	      $$key = pql_format_bool($$key);
 	} elseif(($key == sprintf("%s", pql_get_define("PQL_ATTR_GROUP_CONFIRM_TEXT"))) or ($key == vsprintf("%s", pql_get_define("PQL_ATTR_GROUP_MODERATOR_TEXT"))))
 	  // It's a multi-line text
-	  $$key = eregi_replace("\n", "<br>", $value);
+	  $$key = preg_replace("\n", "<br>", $value);
 
 	// Generate the link URL 
 	$link   = $key . "_link";

@@ -21,14 +21,14 @@ function ldapserver_check($type) {
 
 		if(preg_match('/^ldap:\/\//i', $server)) {
 		  $uri = "ldap://";
-		  $server = eregi_replace($uri, '', $server);
+		  $server = preg_replace($uri, '', $server);
 		} elseif(preg_match('/^ldaps:\/\//i', $server)) {
 		  $uri = "ldaps://";
-		  $server = eregi_replace($uri, '', $server);
+		  $server = preg_replace($uri, '', $server);
 		} elseif(preg_match('/^ldapi:\/\//i', $server)) {
 		  $uri = "ldapi://";
 		  
-		  $server = eregi_replace($uri, '', $server);
+		  $server = preg_replace($uri, '', $server);
 
 		  if(preg_match('/^\//', $server))
 			$_REQUEST["ldapserver"][$i] = $uri.urlencode($server);

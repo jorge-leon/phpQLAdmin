@@ -216,7 +216,7 @@ $alphabet = array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
 	$header  = stripslashes($header);
 
 	// Remove any M$ newlines...
-	$header  = eregi_replace("
+	$header  = preg_replace("
 ", "", $header);
 
 	$total   = $_REQUEST['total_keys'];

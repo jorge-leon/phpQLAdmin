@@ -96,7 +96,7 @@ if($origin == $defaultdomain) {
 }
 
 // This is the domain, but with the TLD removed. For use in the SOA record.
-$basedomain = eregi_replace("\.".$origin, "", $defaultdomain);
+$basedomain = preg_replace("\.".$origin, "", $defaultdomain);
 ?>
     <pre>
 <?php

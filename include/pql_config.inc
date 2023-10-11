@@ -4,6 +4,18 @@
 // $Id: pql_config.inc,v 1.101 2007-09-13 18:09:11 turbo Exp $
 //
 
+// leg20170515: helper functions to shorten some code
+function isSessionSetAndTrue($index) {
+  return (isset($_SESSION[$index]) and $_SESSION[$index]);
+ }
+function is_setAndTrue(&$var, $index = null) {
+  if(is_array($var))
+    return (isset($arr[$index]) and $arr[$index]);
+  else
+    return (isset($var) and $var);
+ }
+
+
 // {{{ Include the API files
 require($_SESSION["path"]."/include/pql.inc");					// Main API file
 require($_SESSION["path"]."/include/pql_formating.inc");		// Output formating API
@@ -46,6 +58,8 @@ function pql_set_define($define, $value, $case_insensitive = false, $dn = NULL) 
 	  
 	  $value = $tmp;
 	}
+
+	//error_log("--- define:$define=$value\n", 3, $_SESSION["path"]."/phpQLadmin.log");
 
 	if($dn)
 	  // Called with a DN specific define
@@ -111,7 +125,8 @@ if(empty($_SESSION["USER_HOST"]) or ($_SESSION["USER_HOST"] == ';;') or ($_SESSI
 	unset($tmp);
   }
 
-  $_SESSION["USER_HOST"] = $host[0] . ";" . $host[1] . ";" . $host[2];
+  $_SESSION["USER_HOST"] = implode(";", $host);
+  // was $host[0] . ";" . $host[1] . ";" . $host[2];
   unset($host);
 }
 // }}}
@@ -135,9 +150,9 @@ if(empty($_pql)) {
 // {{{ Initalize some session variable - either with the old OR with an empty value
 $_SESSION["ALLOW_BRANCH_CREATE"]	= (!empty($_SESSION["ALLOW_BRANCH_CREATE"]))	? $_SESSION["ALLOW_BRANCH_CREATE"]	: '';
 $_SESSION["ALLOW_CONTROL_CREATE"]	= (!empty($_SESSION["ALLOW_CONTROL_CREATE"]))	? $_SESSION["ALLOW_CONTROL_CREATE"]	: '';
-$_SESSION["ALLOW_EZMLM_CREATE"]		= (!empty($_SESSION["ALLOW_EZMLM_CREATE"]))		? $_SESSION["ALLOW_EZMLM_CREATE"]	: '';
-$_SESSION["ADVANCED_MODE"]			= (!empty($_SESSION["ADVANCED_MODE"]))			? $_SESSION["ADVANCED_MODE"]		: '';
-$_SESSION["SINGLE_USER"]			= (!empty($_SESSION["SINGLE_USER"]))			? $_SESSION["SINGLE_USER"]			: '';
+$_SESSION["ALLOW_EZMLM_CREATE"]		= (!empty($_SESSION["ALLOW_EZMLM_CREATE"]))	? $_SESSION["ALLOW_EZMLM_CREATE"]	: '';
+$_SESSION["ADVANCED_MODE"]		= (!empty($_SESSION["ADVANCED_MODE"]))		? $_SESSION["ADVANCED_MODE"]		: '';
+$_SESSION["SINGLE_USER"]		= (!empty($_SESSION["SINGLE_USER"]))		? $_SESSION["SINGLE_USER"]		: '';
 // }}}
 
 // {{{ Load configuration from the database...
@@ -178,6 +193,13 @@ foreach($_pql->ldap_basedn as $dn)  {
 			$pql_config_private_array_which_irritates_me = NULL;
 			
 			if(!empty($info[$i][$define_attribute])) {
+			  // leg2017053
+			  // We think, that there as a bug iterating over $info
+			  // since we get a warning with not existing ["count"] index
+			  // so we skip these
+			  if(is_numeric($define_attribute)) {
+				continue;
+		          }
 			  for($k=0; $k < $info[$i][$define_attribute]["count"]; $k++) {
 				if($pql_config_private_array_which_irritates_me)
 				  $pql_config_private_array_which_irritates_me .= ",".$info[$i][$define_attribute][$k];
@@ -264,7 +286,8 @@ unset($dn);
 // }}}
 
 // 5. Check the Control DN if the user is there -> Allow management of Controls information
-if(!empty($_SESSION["USER_DN"]) and empty($_SESSION["ALLOW_CONTROL_CREATE"])) {
+if(!empty($_SESSION["USER_DN"]) and empty($_SESSION["ALLOW_CONTROL_CREATE"])
+   and isset($_SESSION["USER_SEARCH_DN_CTR"])) {
   $_SESSION["ALLOW_CONTROL_CREATE"] = pql_validate_administrator($_SESSION["USER_SEARCH_DN_CTR"],
 																 pql_get_define("PQL_ATTR_ADMINISTRATOR_CONTROLS"),
 																 $_SESSION["USER_DN"]);
@@ -273,9 +296,12 @@ if(!empty($_SESSION["USER_DN"]) and empty($_SESSION["ALLOW_CONTROL_CREATE"])) {
 // 6. Get user configuration for phpQLAdmin
 $user_object = $_pql->search($_SESSION["USER_DN"], "(objectClass=*)", 'BASE');
 foreach($PQL_ATTRIBUTE["USER"] as $define_name => $attrib) {
-  pql_set_define($define_name, $user_object[$attrib][0], true, $_SESSION["USER_DN"]);
-}
+  if(!empty($user_object["dn"]) and isset($user_object[$attrib])) {
+    // skip rootdn and not existing indices
 
+    pql_set_define($define_name, $user_object[$attrib], true, $_SESSION["USER_DN"]);
+  }
+}
 // 7. Get language translation
 require($_SESSION["path"]."/include/pql_lang.inc");
 $LANG = new pql_lang($_pql);
@@ -298,9 +324,10 @@ if((empty($_SESSION["ACI_SUPPORT_ENABLED"]) and function_exists("user_generate_a
 // }}}
   
   // {{{ 9b. Check to see if the attributes mailQuotaSize and mailQuotaCount exists - new style quota.
+  $_SESSION["NEW_STYLE_QUOTA"] = 0;
   if(!empty($ocs[pql_get_define("PQL_ATTR_QUOTA_SIZE")]["OID"]) and
-	 !empty($ocs[pql_get_define("PQL_ATTR_QUOTA_COUNT")]["OID"]))
-	$_SESSION["NEW_STYLE_QUOTA"] = 1;
+     !empty($ocs[pql_get_define("PQL_ATTR_QUOTA_COUNT")]["OID"]))
+      $_SESSION["NEW_STYLE_QUOTA"] = 1;
 // }}}
 
   // {{{ 9c. Do we support old style quota, even if new style is enabled?

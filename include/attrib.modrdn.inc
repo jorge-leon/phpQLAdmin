@@ -15,7 +15,7 @@ function attribute_setup_aci($dn, $old, $new) {
 		if($old_acis[$i]['SUBJECT']) {
 			if(lc($old_acis[$i]['SUBJECT']) == lc($old)) {
 				// Replace the old value with the new.
-				$new_acis[] = eregi_replace($old, $new, $old_acis[$i]['LINE']);
+				$new_acis[] = preg_replace($old, $new, $old_acis[$i]['LINE']);
 				$replaced=1;
 			} else
 			  $new_acis[] = $old_acis[$i]['LINE'];

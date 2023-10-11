@@ -112,7 +112,7 @@ if(!($whoarewe = pql_get_define("PQL_CONF_WHOAREWE")))
 		// If it's an LDAP URI, replace "%2f" with "/" -> URLdecode
 		$server[0] = urldecode($server[0]);
 ?>
-        <b><?php echo $server[0].":".$server[1]?></b>
+        <b><?php echo implode(":", $server) /* was server[0].":".$server[1] */?></b>
         <input type="hidden" name="server" value="<?php echo $_SESSION["USER_HOST"]?>">
 <?php
 	}
@@ -173,7 +173,13 @@ if(!($whoarewe = pql_get_define("PQL_CONF_WHOAREWE")))
 	//       (under different branches/trees).
 	$user_found = 0;
 	foreach($_SESSION["BASE_DN"] as $base) {
-		$objects = $_pql->get_dn($base, pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $base).'='.$_POST["uname"]);
+
+                $login_user_attr = pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $base);
+		$alt_user_attr = pql_get_define("PQL_CONF_LOGIN_ATTRIBUTE", NULL);
+		if($alt_user_attr) {
+		      $login_user_attr = $alt_user_attr;
+		}
+		$objects = $_pql->get_dn($base, $login_user_attr.'='.$_POST["uname"]);
 		if(is_array($objects)) {
 		  foreach($objects as $userdn) {
 			// Check the account status of this user

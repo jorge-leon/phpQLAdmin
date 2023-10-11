@@ -43,6 +43,7 @@ foreach($_pql->ldap_basedn as $dn)  {
 	$_SESSION["USE_USERS"] = 1;
   }
 }
+$adv_uri = "";
 
 if($_SESSION["ADVANCED_MODE"] or @$_REQUEST["advanced"]) {
   $adv_uri = "?advanced=1";

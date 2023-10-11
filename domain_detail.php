@@ -55,6 +55,9 @@ if(!$domainname) {
   // TODO: Resonable default!
   $domainname = '';				// DLW: Just to shut off some warnings.
 }
+$ou = $_pql->get_attribute($_REQUEST["domain"], pql_get_define("PQL_ATTR_OU"));
+//$ou = $_pql->get_attribute($_REQUEST["domain"], pql_get_define("PQL_ATTR_OU"));
+$o = $_pql->get_attribute($_REQUEST["domain"], "o");
 // }}}
 
 if(empty($_REQUEST["view"]))
@@ -97,6 +100,8 @@ if($_REQUEST["view"] == 'default') {
 				   "facsimiletelephonenumber"	=> pql_get_define("PQL_ATTR_FACSIMILETELEPHONENUMBER"),
 				   "mobile"						=> pql_get_define("PQL_ATTR_MOBILE"),
 				   "info"						=> pql_get_define("PQL_ATTR_INFO"));
+} elseif($_REQUEST["view"] == 'users') {
+  $attribs = null;
 }
 
 if(is_array($attribs)) {
@@ -109,7 +114,7 @@ if(is_array($attribs)) {
 	
 	if($attrib == sprintf("%s", pql_get_define("PQL_ATTR_INFO"))) {
 	  // Special circumstance - multiple lines...
-	  $$key = eregi_replace("\n", "<br>", $$key);
+	  $$key = preg_replace("/\n/", "<br>", $$key);
 	}
 	
 	// Setup edit links. If it's a dcOrganizationNameForm attribute, then
@@ -179,8 +184,8 @@ if($_REQUEST["view"] == 'default') {
   // create an array that pql_ldap_mailquota() understands.
   if($basequota) {
 	$temp		= explode(',', $basequota);
-	$temp[1]	= eregi_replace("C$", "", $temp[1]);
-	$temp[0]	= eregi_replace("S$", "", $temp[0]);
+	$temp[1]	= preg_replace("/C$/", "", $temp[1]);
+	$temp[0]	= preg_replace("/S$/", "", $temp[0]);
 	
 	$quota			 = array();
 	$quota["maxmails"] = $temp[1];
@@ -216,7 +221,7 @@ if($_SESSION["ADVANCED_MODE"]) {
 	$new = array('access' => 'Branch access');
 	$buttons = $buttons + $new;
 
-	if($_SESSION["ACI_SUPPORT_ENABLED"] and $_SESSION["ALLOW_BRANCH_CREATE"]) {
+	if(isSessionSetAndTrue("ACI_SUPPORT_ENABLED") and $_SESSION["ALLOW_BRANCH_CREATE"]) {
 		// ACI enabled and this is a 'super-admin'.
 		$new = array('aci'	=> 'Access Control Information');
 		$buttons = $buttons + $new;
@@ -275,17 +280,28 @@ if($_SESSION["ALLOW_BRANCH_CREATE"]) {
   $buttons = $buttons + $new;
 }
 
-if($domainname) {
-?>
-  <span class="title1"><?php echo $LANG->_('Organization name')?>: <?php echo pql_maybe_idna_decode(urldecode($domainname))?></span>
-<?php
-} elseif($o) {
-?>
-  <span class="title1"><?php echo $LANG->_('Organization name')?>: <?php echo urldecode($o)?></span>
-<?php
-}
-?>
+// leg20170513
+// if($domainname) {
+// ? >
+//   <span class="title1">< ?php echo $LANG->_('Organization name')? >: < ?php echo pql_maybe_idna_decode(urldecode($domainname))? ></span>
+// < ?php
+// } elseif($o) {
+// ? >
+//   <span class="title1">< ?php echo $LANG->_('Organization name')? >: < ?php echo urldecode($o)? ></span>
+// < ?php
+// }
+// ? >
 
+if($o)
+  $organization = urldecode($o);
+elseif ($ou)
+  $organization = urldecode($ou);
+elseif ($domainname)
+  $organization = pql_maybe_idna_decode(urldecode($domainname));
+else
+ $organization = $LANG->_('Not set');
+?>
+  <span class="title1"><?php echo $LANG->_('Organization name')?>: <?php echo $organization?></span>
   <br><br>
 <?php
 pql_generate_button($buttons, "domain=" . $url["domain"]); echo "  <br>\n";

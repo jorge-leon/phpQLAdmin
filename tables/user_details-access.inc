@@ -19,6 +19,8 @@ foreach($_pql->ldap_basedn as $dn)  {
 	if($dom) {
 	  foreach($dom as $d) {
 		// Filter out the RootDN
+		// TODO: leg20170511: branch was not set, fickle something up:
+		$branch = $_REQUEST["rootdn"];
 		if($d != $branch)
 		  $domains_admins[] = $d;
 	  }

@@ -10,7 +10,7 @@ require($_SESSION["path"]."/left-head.html");
 // }}}
 
 // {{{ Find out if we're to run in ADVANCE/SIMPLE mode
-if($_REQUEST["advanced"] == 1) {
+if(@$_REQUEST["advanced"] == 1) {
   $checked  = " CHECKED";
   $_SESSION["ADVANCED_MODE"] = 1;
 } else {
@@ -55,7 +55,7 @@ if($_REQUEST["advanced"] == 1) {
       </a>
     </nobr>
   </div>
-<?php if(!pql_get_define("PQL_CONF_DISABLE_ADVANCED_MODE")) { ?>
+<?php if(!pql_get_define("PQL_CONF_DISABLE_ADVANCED_MODE", $_SESSION["USER_DN"])) { ?>
 
   <!-- Advanced Mode selector -->
   <div id="el4Parent" class="parent">
@@ -98,7 +98,7 @@ if($_SESSION["ADVANCED_MODE"] and $_SESSION["ALLOW_BRANCH_CREATE"]) {
   pql_format_tree($LANG->_('phpQLAdmin Configuration'), 0, $links, 1);
 
   // Level 2c2: LDAP server configuration
-  if($_SESSION["ACCESSLOG_OVERLAY"])
+  if(@$_SESSION["ACCESSLOG_OVERLAY"])
 	$accesslog_overlay = array($LANG->_('LDAP Access logs')			=> 'config_ldap.php?type=accesslog&start=0');
 
   if($_SESSION["CONFIG_BACKEND_ENABLED"] and preg_match('/CVS/i', $_SESSION["VERSION"]))
@@ -111,7 +111,7 @@ if($_SESSION["ADVANCED_MODE"] and $_SESSION["ALLOW_BRANCH_CREATE"]) {
 				   $LANG->_('LDAP Attribute types')		=> 'config_ldap.php?type=attributetypes',
 				   $LANG->_('LDAP Object classes')		=> 'config_ldap.php?type=objectclasses');
 
-	if(is_array($accesslog_overlay))
+	if(isset($accesslog_overlay) and is_array($accesslog_overlay))
 	  $links = $accesslog_overlay + $links;
 
 	if(is_array($config_backend))

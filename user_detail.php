@@ -33,7 +33,7 @@ if(!$_pql->get_dn($_GET["user"], '(objectclass=*)', 'BASE')) {
     exit();
 }
 
-if(!$_GET["rootdn"]) {
+if(!is_setAndTrue($_GET, "rootdn")) {
 	$_GET["rootdn"] = pql_get_rootdn($_GET["user"], 'user_detail.php');
 }
 
@@ -179,6 +179,7 @@ foreach($attribs as $key => $attrib) {
 	  $$key = pql_format_bool($value);
 
 	$alt = pql_complete_constant($LANG->_('Modify %attribute% for %what%'), array('attribute' => $attrib, 'what' => $username));
+	if(is_array($value)) $value = implode(" ", $value);
     $$link = "<a href=\"user_edit_attribute.php?rootdn=".$url["rootdn"]."&domain=".$url["domain"]."&attrib=$attrib&user=".$url["user"]."&$attrib=$value&view=" . $_GET["view"] . "\"><img src=\"images/edit.png\" width=\"12\" height=\"12\" border=\"0\" alt=\"".$alt."\"></a>";
 }
 $quota = pql_user_get_quota($_GET["user"]);
@@ -280,7 +281,7 @@ if(@empty($USER_IS_GROUP)) {
 	$new = array('personal'			=> 'Personal details');
 	$buttons = $buttons + $new;
 
-	if(!@empty($_SESSION["ADVANCED_MODE"]) and @empty($_SESSION["SINGLE_USER"]) and $$ppolicy_entry) {
+	if(!@empty($_SESSION["ADVANCED_MODE"]) and @empty($_SESSION["SINGLE_USER"]) and @$$ppolicy_entry) {
 	  // Domain admins should be able to see this...
 	  $new = array('ppolicy'		=> 'Password Policy');
 	  $buttons = $buttons + $new;
@@ -325,7 +326,7 @@ if(!@empty($_SESSION["ADVANCED_MODE"]) and empty($USER_IS_GROUP)) {
 	$new = array('access'			=> 'User access');
 	$buttons = $buttons + $new;
 
-	if($_SESSION["ALLOW_BRANCH_CREATE"] && $_SESSION["ACI_SUPPORT_ENABLED"] && pql_get_define("PQL_CONF_MAIL_INFORMATION")) {
+	if($_SESSION["ALLOW_BRANCH_CREATE"] && isset($_SESSION["ACI_SUPPORT_ENABLED"]) && pql_get_define("PQL_CONF_MAIL_INFORMATION")) {
 		$new = array('aci'			=> 'Access Control Information');
 		$buttons = $buttons + $new;
 	}

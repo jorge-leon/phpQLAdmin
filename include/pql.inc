@@ -151,6 +151,9 @@ class pql {
   
   // {{{ bool _set_options() {
   function _set_options() {
+	// leg20180913: increment sizelimit
+	ldap_set_option($this->ldap_linkid, LDAP_OPT_SIZELIMIT, 2000);
+
 	// LDAP_OPT_REFERRALS
 	//	Automatically follow referrals returned by LDAP server?
 	//	LDAP_OPT_OFF			 0
@@ -333,11 +336,11 @@ class pql {
 	global $_SESSION, $pql_cache;
 	
 	// Normalize the DN
+    $orig_dn = $dn;
     if(!isset($dn))
         $dn = "";
     else {
         $dn = pql_format_normalize_dn($dn);
-	
         // {{{ Convert a DNS TTL RDN to something I (phpQLAdmin) can understand
         if(preg_match("/^dNSTTL=/i", $dn))
             // FROM: dNSTTL=3600 relativeDomainName=@,dc=domain,dc=tld,PQL_CONF_SUBTREE_BIND9,o=Branch,c=SE
@@ -412,9 +415,9 @@ class pql {
 	  echo "|Searching with: <b>$func(linkid, '$dn', '$filter', ";
 	  if(is_array($op)) {
 		echo "array(";
-		for($i=0; $op[$i]; $i++) {
+		for($i=0; isset($op[$i]); $i++) {
 		  echo $op[$i];
-		  if($op[$i+1])
+		  if(isset($op[$i+1]))
 			echo ", ";
 		}
 		echo ")";
@@ -580,7 +583,6 @@ class pql {
 	} else {
 	  $scope = "SUBTREE";
 	}
-	
 	// Get the (WHOLE) object but only return the attributes of interest.
 	$object = $this->search($dn, $filter, $scope, 1, $operational);
 	if(!empty($object)) {
@@ -840,12 +842,12 @@ function pql_user_get_quota($user) {
 	$quota_count = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_QUOTA_COUNT"));
 	
 	if($quota_size)
-	  $quota   = $quota_size[0]."S";
+	  $quota   = $quota_size."S";
 	else
 	  $quota   = '0S';
 
 	if($quota_count)
-	  $quota  .= ",".$quota_count[0]."C";
+	  $quota  .= ",".$quota_count."C";
 	else
 	  $quota  .= ',0C';
   
@@ -854,12 +856,13 @@ function pql_user_get_quota($user) {
 	  $quota = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_QUOTA_VALUE"));
 	else
 	  $quota = array($quota);
+
   } else
 	// We're not using new style quota, get the old type...
 	$quota = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_QUOTA_VALUE"));
   
   if(!is_array($quota))
-	return false;
+  	return false;
   else
 	return pql_parse_quota($quota[0]);
 }
@@ -1064,7 +1067,7 @@ function pql_get_next_username($domain) {
 	else {
 	  // We have previous values in the DB. 
 	  sort($USERS);
-	  $nr  = eregi_replace($prefix, "", $USERS[count($USERS)-1]);
+	  $nr  = preg_replace("/$prefix/i", "", $USERS[count($USERS)-1]);
 	  
 	  $suffix = sprintf("$suffix_length", $nr + 1);
 	}
@@ -1188,8 +1191,13 @@ function pql_password_hash($password, $hash) {
   switch($hash) {
   case "{SSHA}":
 	// SHA256 hashing (salted)
+	//$salt = uniqid(microtime());
+	$salt = uniqid();
+	//$log = "$password:$salt";
+	//@error_log($log, 3, "phpQLadmin.log");
 	if(function_exists("mhash"))
-	  return "{SSHA}" . base64_encode(mhash(MHASH_SHA256, $password, uniqid(microtime())));
+	  return $hash . base64_encode(mhash(MHASH_SHA1, $password . $salt) . $salt);
+	  //return "{SSHA}" . base64_encode(mhash(MHASH_SHA256, $password, $salt) . $salt);
 	
   case "{SHA}":
 	// SHA1 hashing
@@ -1233,6 +1241,9 @@ function pql_password_hash($password, $hash) {
 function pql_generate_password() {
   $amount = 8;
   
+  // leg20170525: quick fix to return a standard password
+  if(true) return "prep1234";
+
   for(;;) {
 	$pwd = NULL; $o = NULL;
 	
@@ -1529,7 +1540,8 @@ function pql_fix_path($path) {
   $path = preg_replace('/ /',  '_', $path, -1);
   $path = preg_replace('/&/',  '_', $path, -1);
   $path = preg_replace('/@/',  '_', $path, -1);
-  $path = preg_replace('/\./', '_', $path, -1);
+  // legg 20170521: why would paths with dots be bad? I for one NEED a . in front of the Maildir path.
+  //$path = preg_replace('/\./', '_', $path, -1);
   
   return($path);
 }

@@ -14,8 +14,14 @@
       <input type="hidden" name="subbranch"          value="<?php echo $url["subbranch"]?>">
       <input type="hidden" name="email_domain"       value="<?php echo $_REQUEST["email_domain"]?>">
       <input type="hidden" name="include_additional" value="<?php echo $_REQUEST["include_additional"]?>">
+<?php if($_REQUEST["host"]) { ?>
+      <input type="hidden" name="host"      value="<?php echo $_REQUEST["host"]?>">
+<?php } ?>
 <?php if($_REQUEST["maildirectory"]) { ?>
       <input type="hidden" name="maildirectory"      value="<?php echo $_REQUEST["maildirectory"]?>">
+<?php } ?>
+<?php if($_REQUEST["homedirectory"]) { ?>
+      <input type="hidden" name="homedirectory"      value="<?php echo $_REQUEST["homedirectory"]?>">
 <?php } ?>
 
       <table cellspacing="0" cellpadding="3" border="0">

@@ -98,9 +98,9 @@ function pql_kadmin_get_principal($dn) {
 	$password = $_pql->get_attribute($dn, pql_get_define("PQL_ATTR_PASSWD"));
 
 	if(preg_match('/SASL/', $password))
-	  $principal = eregi_replace("{SASL}", "", $password);
+	  $principal = preg_replace("{SASL}", "", $password);
 	elseif(preg_match('/KERBEROS/', $password))
-	  $principal = eregi_replace("{KERBEROS}", "", $password);
+	  $principal = preg_replace("{KERBEROS}", "", $password);
 	
 	if($principal)
 	  return($principal);

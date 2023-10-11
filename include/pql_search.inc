@@ -73,10 +73,21 @@ function pql_get_domains() {
 	// Is there any users just below the top DN then?
 	
 	// Can't use $ocs (see above), so instead, I'll have to 'fake' it here.
-	if(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN) == 'o')
-	  $ocs = '(objectClass=organization)';
-	else if(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN) == 'dc')
-	  $ocs = '(objectClass=domain)'; // Could also be 'domainComponent'
+	switch(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN)) {
+	    case "o":
+	        $ocs = '(objectClass=organization)'; break;
+	    case "dc":
+	        $ocs = '(objectClass=domain)'; break; // Could also be 'domainComponent'
+	    case "ou":
+	        $ocs = '(objectClass=organizationalUnit)'; break;
+	    default:
+	        die("can't determine search filter for domain branches");
+	}
+	// leg20170513: the above was:
+        // if(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN) == 'o')
+	//   $ocs = '(objectClass=organization)';
+	// else if(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN) == 'dc')
+	//   $ocs = '(objectClass=domain)'; // Could also be 'domainComponent'
 	
 	if(pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN))
 	  $filter = pql_get_define("PQL_CONF_REFERENCE_DOMAINS_WITH", $TOP_DN)."=*";
@@ -113,8 +124,8 @@ function pql_get_domains() {
 	}
 
 	if(is_array($new)) {
-	  for($i=0; $new[$i]; $i++)
-		pql_add2array($domains, $new);
+	  for($i=0; isset($new[$i]); $i++)
+		pql_add2array($domains, $new[$i]);
 	}
   }
   
@@ -330,7 +341,7 @@ function pql_get_automount_map($dn) {
 // Search all accounts with forwarders to $user@$domain
 function pql_search_forwarders($user) {
   global $_pql;
-  $return = '';
+  $return = array();
   
   // get all email addresses of a user
   $email   = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_MAIL"));

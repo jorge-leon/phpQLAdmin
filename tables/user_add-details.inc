@@ -70,7 +70,7 @@
 
         <!-- Lastname -->
         <tr class="<?php pql_format_table(); ?>">
-          <td class="title"><?php echo $LANG->_('Lastname')?></td>
+          <td class="title"><?php echo $LANG->_('Given name')?></td>
           <td>
             <?php if(!empty($error_text["name"])) { echo pql_format_error_span($error_text["name"]); }?>
             <?php echo pql_templates_mark_importance($mark); ?>
@@ -307,9 +307,10 @@
 // }}}
 
 	  // {{{ Mail address
+	  $generate_email = function_exists('user_generate_email');
 	  if($mark = pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAIL"))) {
 		if(!pql_get_define("PQL_CONF_CREATE_ADDRESS", $_REQUEST["domain"]) or
-		   (pql_get_define("PQL_CONF_CREATE_ADDRESS", $_REQUEST["domain"]) and !function_exists('user_generate_email')) or
+		   (pql_get_define("PQL_CONF_CREATE_ADDRESS", $_REQUEST["domain"]) and !$generate_email) or
 		   $_SESSION["ADVANCED_MODE"] or !empty($error_text["mail"])) {
 ?>
 
@@ -321,10 +322,11 @@
 <?php		if($lockemailaddress) { ?>
             &nbsp;&nbsp;&nbsp;<b><?php echo $_REQUEST["mail"]?></b>
             <input type="hidden" name="mail" value="<?php echo $_REQUEST["mail"]?>">
-<?php		} else { ?>
-            <?php echo pql_templates_mark_importance($mark); ?>
-            <input type="text" name="mail" value="<?php echo $_REQUEST["mail"]?>">
+<?php		} else {
+		if(!$generate_email)
+		    echo pql_templates_mark_importance($mark); ?>
 <?php		} ?>
+            <input type="text" name="mail" value="<?php echo $_REQUEST["mail"]?>">
 <?php 		if(is_array($additionaldomainname)) { ?>
             <b>@ <select name="email_domain"></b>
               <option value="<?php echo $defaultdomain?>"><?php echo pql_maybe_idna_decode($defaultdomain)?></option>
@@ -336,6 +338,9 @@
             <b>@<?php echo pql_maybe_idna_decode($defaultdomain)?></b>
             <input type="hidden" name="email_domain" value="<?php echo $defaultdomain?>">
 <?php 		} ?>
+<?php           if($generate_email) ?>
+		<br>
+<?php               echo $LANG->_('If left out, the email address will be generated automatically')?>
           </td>
         </tr>
 

@@ -617,10 +617,11 @@ pql_set_define("PQL_ATTR_CONTROL_AUTOADDRCPTHOSTS", 		strtolower('autoAddRCPTHos
 pql_set_define("PQL_ATTR_FORCE_FQDN",                       strtolower('forceFQDN'),                    false);
 
 // Setup
-pql_set_define("PQL_ATTR_SEEALSO",							strtolower('seeAlso'),						false);
-pql_set_define("PQL_ATTR_BASEHOMEDIR",						strtolower('baseHomeDir'),					false);
-pql_set_define("PQL_ATTR_BASEMAILDIR",						strtolower('baseMailDir'),					false);
-pql_set_define("PQL_ATTR_BASEQUOTA",						strtolower('baseQuota'),					false);
+pql_set_define("PQL_ATTR_SEEALSO",					strtolower('seeAlso'),						false);
+pql_set_define("PQL_ATTR_DEFAULT_MAILHOST",				strtolower('defaultMailHost'),					false);
+pql_set_define("PQL_ATTR_BASEHOMEDIR",					strtolower('baseHomeDir'),					false);
+pql_set_define("PQL_ATTR_BASEMAILDIR",					strtolower('baseMailDir'),					false);
+pql_set_define("PQL_ATTR_BASEQUOTA",					strtolower('baseQuota'),					false);
 pql_set_define("PQL_ATTR_DEFAULT_PASSWORDSCHEME",			strtolower('defaultPasswordScheme'),		false);
 pql_set_define("PQL_ATTR_DEFAULT_ACCOUNTTYPE",				strtolower('defaultAccountType'),			false);
 pql_set_define("PQL_ATTR_USERNAME_PREFIX",					strtolower('userNamePrefix'),				false);

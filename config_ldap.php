@@ -96,13 +96,13 @@ if($_REQUEST["type"] == 'config') {
 		  unset($configs[$i][pql_get_define("PQL_ATTR_ATTRIBUTE_TYPES")]);
 
 		  $configs[$i][pql_get_define("PQL_ATTR_OLC_DB")] = 
-				  preg_replace('^{[0-9]+}', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB")]);
+				  preg_replace('/^{[0-9]+}/', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB")]);
 
 		  if($configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")]) {
             // Remove comments and empty lines from DB_CONFIG configuration
             for($j = 0; $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j]; $j++) {
               $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j] = 
-					  preg_replace('^{[0-9]+}', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j]);
+					  preg_replace('/^{[0-9]+}/', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j]);
 
 			  if(preg_match('/^#/', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j]) ||
 				 preg_match('/^$/', $configs[$i][pql_get_define("PQL_ATTR_OLC_DB_CONFIG")][$j]))
@@ -166,7 +166,7 @@ if($_REQUEST["type"] == 'config') {
 		  unset($configs[$i][pql_get_define("PQL_ATTR_ATTRIBUTE_TYPES")]);
 
 		  $configs[$i][pql_get_define("PQL_ATTR_OLC_OVERLAY")] = 
-				  preg_replace('^{[0-9]+}', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_OVERLAY")]);
+				  preg_replace('/^{[0-9]+}/', '', $configs[$i][pql_get_define("PQL_ATTR_OLC_OVERLAY")]);
 		}
 	  }
 // }}}
@@ -194,19 +194,19 @@ if($_REQUEST["type"] == 'config') {
   }
 
   // {{{ Modify the values for prettier output
-  for($i = 0; is_array($configs[$i]); $i++) {
+  for($i = 0; $configs[$i] and is_array($configs[$i]); $i++) {
     foreach($configs[$i] as $attrib => $val) {
       if(is_array($val)) {
         $new = array();
 
         foreach($val as $v) {
-          $v = eregi_replace('^{[0-9]+}', '', $v);
-          $v = eregi_replace('^{-[0-9]+}', '', $v);
-          $v = eregi_replace('\" \"', '<br>&nbsp;&nbsp;', $v);
-          $v = eregi_replace(' by ', '<br>&nbsp;&nbsp; by ', $v);
-		  $v = eregi_replace(' attrs', '<br>&nbsp;&nbsp; attrs', $v);
-          $v = eregi_replace('^\"', '', $v);
-          $v = eregi_replace('\" \"', '', $v);
+          $v = preg_replace('/^{[0-9]+}/', '', $v);
+          $v = preg_replace('/{-[0-9]+}/', '', $v);
+          $v = preg_replace('/\" \"/', '<br>&nbsp;&nbsp;', $v);
+          $v = preg_replace('/ by /', '<br>&nbsp;&nbsp; by ', $v);
+		  $v = preg_replace('/ attrs/', '<br>&nbsp;&nbsp; attrs', $v);
+          $v = preg_replace('/^\"/', '', $v);
+          $v = preg_replace('/\" \"/', '', $v);
 
 		  pql_add2array($new, $v);
         }
@@ -214,13 +214,13 @@ if($_REQUEST["type"] == 'config') {
 		$configs[$i][$attrib] = $new;
 	  } else {
         // Value is not an array.
-        $val = eregi_replace('^{[0-9]+}', '', $val);
-		$val = eregi_replace('^{-[0-9]+}', '', $val);
-		$val = eregi_replace('\" \"', '<br>&nbsp;&nbsp;', $val);
-		$val = eregi_replace(' by ', '<br>&nbsp;&nbsp; by ', $val);
-		$val = eregi_replace(' attrs', '<br>&nbsp;&nbsp; attrs', $val);
-		$val = eregi_replace('^\"', '', $val);
-		$val = eregi_replace('\" \"', '', $val);
+        $val = preg_replace('/^{[0-9]+}/', '', $val);
+		$val = preg_replace('/^{-[0-9]+}/', '', $val);
+		$val = preg_replace('/\" \"/', '<br>&nbsp;&nbsp;', $val);
+		$val = preg_replace('/ by /', '<br>&nbsp;&nbsp; by ', $val);
+		$val = preg_replace('/ attrs/', '<br>&nbsp;&nbsp; attrs', $val);
+		$val = preg_replace('/^\"/', '', $val);
+		$val = preg_replace('/\" \"/', '', $val);
 
 		$configs[$i][$attrib] = $val;
 	  }

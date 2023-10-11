@@ -428,7 +428,8 @@ function attribute_save($type) {
 		// don't change if new value equal to old one
 		$msg = pql_complete_constant($LANG->_('%what% unchanged'), array('what' => $LANG->_('Domain administrator')));
 		attribute_forward($msg);
-		break;
+		//break;
+		return;
 	}
 	
 	// Get the old values, so we can remove the one we're modifying

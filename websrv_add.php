@@ -353,11 +353,11 @@ if(($error == 'true') or !$_REQUEST["type"] or
 	for($i=0; $hosts[$i]; $i++) {
 	  // {{{ Extract the host FQDN from the URL. A little crude...
 	  if(preg_match('/.*:\/\//', $_REQUEST["serverurl"]))
-		$fqdn = eregi_replace('.*://', '', $_REQUEST["serverurl"]);
+		$fqdn = preg_replace('.*://', '', $_REQUEST["serverurl"]);
 	  else
 		$fqdn = $_REQUEST["serverurl"];
-	  if(preg_match('/:/', $fqdn)) { $fqdn = eregi_replace(':.*', '', $fqdn); }
-	  if(preg_match('/\//', $fqdn)) { $fqdn = eregi_replace('/.*', '', $fqdn); }
+	  if(preg_match('/:/', $fqdn)) { $fqdn = preg_replace(':.*', '', $fqdn); }
+	  if(preg_match('/\//', $fqdn)) { $fqdn = preg_replace('/.*', '', $fqdn); }
 	  // }}}
 	  
 	  // {{{ Setup the entry array

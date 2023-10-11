@@ -8,10 +8,17 @@
 $pql_cache = new pql_cache();
 $pql_defines = new pql_defines();
 
+  // mangle key for memcache
+  function _m($key) {
+      //return preg_replace("/[[:space:]]/", "", $key);
+      //return preg_replace("/[^A-Za-z0-9]/", "", $key);
+      return $key;
+  }
 // {{{ PQL_CACHE - caching class
 class pql_cache {
   var $_memcache = 0;
   var $cache;
+
 
   // {{{ add(key, value)
   function add($key, $value) {
@@ -34,8 +41,10 @@ class pql_cache {
 	  {
 		$this->cache[$key] = $value;
 
-		if(file_exists($_SESSION["path"]."/.DEBUG_CACHE"))
-		  echo "ADD(1): '$key' = '$value'<br>\n";
+		if(file_exists($_SESSION["path"]."/.DEBUG_CACHE")) {
+  		  if(is_array($value)) $dbg = print_r($value, true); else $dbg = $value;
+		  echo "ADD(1): '$key' = '$dbg'<br>\n";
+		}
 	  }
 	} else {
 	  // Memcache storage ('add' does NOT overwrite!)
@@ -79,14 +88,17 @@ class pql_cache {
 
 		return(0);
 	  } else {
-		if(file_exists($_SESSION["path"]."/.DEBUG_CACHE"))
-		  echo "GET(1b): '$key' <b>is</b> cached => '$value'<br>";
-		
-		return($this->cache[$key]);
+	        $value = $this->cache[$key];
+		if(file_exists($_SESSION["path"]."/.DEBUG_CACHE")) {
+		  if(is_array($value)) $dbg = print_r($value, true); else $dbg = $value;
+		  echo "GET(1b): '$key' <b>is</b> cached => '$dbg'<br>";
+		}
+		return($value);
 	  }
 	} else {
 	  // Memcache storage
 	  $value = $this->_memcache->get($key);
+
 	  if(!empty($value)) {
 		if(file_exists($_SESSION["path"]."/.DEBUG_CACHE"))
 		  echo "GET(2a): '$key' <b>is</b> cached => '$value'<br>";
@@ -148,7 +160,7 @@ class pql_cache {
 	} else {
 	  if(file_exists($_SESSION["path"]."/.DEBUG_CACHE"))
 		echo "RPL(2): '$key' = '$value'<br>\n";
-	  $this->_memcache->replace($key, $value);  //, 1, (60*10));
+	  $this->_memcache->replace(_($key), $value);  //, 1, (60*10));
 	}
   }
   // }}}
@@ -169,7 +181,9 @@ class pql_cache {
 
 	if(!file_exists($_SESSION["path"]."/.DEBUG_DISABLE_CACHE") and !@$this->_memcache) {
 	  // Cache not disabled, continue...
-	  if (class_exists('Memcache') and function_exists("memcache_connect")) {
+	  if (class_exists('Memcache') and function_exists("memcache_connect")
+	      and !file_exists($_SESSION["path"]."/.DEBUG_DISABLE_MEMCACHE")
+	     ) {
 		// The whole point with memcached is that it runs on localhost, so
 		// the TCP/IP connection doesn't give any overhead! Change at your own
 		// peril!

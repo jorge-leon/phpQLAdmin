@@ -26,6 +26,8 @@ function pql_templates_group() {
 	  $TEMPLATE["userobjectclass"] = array('person', 'qmailUser', 'qmailGroup');
   }
 
+  if(!isset($TEMPLATE)) return false;
+  
   if(is_array($TEMPLATE))
 	return($TEMPLATE);
   else

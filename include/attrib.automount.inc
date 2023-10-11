@@ -407,18 +407,18 @@ function attribute_init() {
 		  // {{{ Extract SMB specific stuff
 		  if(preg_match('/username/i', $opts[$i])) {
 			$_REQUEST["smbcredtype"] = 'manual';
-			$_REQUEST["smbcreduser"] = eregi_replace('username=', '', $opts[$i]);
+			$_REQUEST["smbcreduser"] = preg_replace('username=', '', $opts[$i]);
 		  } elseif(preg_match('/password/i', $opts[$i])) {
 			$_REQUEST["smbcredtype"] = 'manual';
-			$_REQUEST["smbcredpasswd"] = eregi_replace('password=', '', $opts[$i]);
+			$_REQUEST["smbcredpasswd"] = preg_replace('password=', '', $opts[$i]);
 		  } elseif(preg_match('/credentials/i', $opts[$i])) {
 			$_REQUEST["smbcredtype"] = 'file';
-			$_REQUEST["smbcredfile"] = eregi_replace('credentials=', '', $opts[$i]);
+			$_REQUEST["smbcredfile"] = preg_replace('credentials=', '', $opts[$i]);
 			
 		  } elseif(preg_match('/uid/i', $opts[$i])) {
-			$_REQUEST["smbcreduid"]  = eregi_replace('uid=', '', $opts[$i]);
+			$_REQUEST["smbcreduid"]  = preg_replace('uid=', '', $opts[$i]);
 		  } elseif(preg_match('/gid/i', $opts[$i])) {
-			$_REQUEST["smbcredgid"]  = eregi_replace('gid=', '', $opts[$i]);
+			$_REQUEST["smbcredgid"]  = preg_replace('gid=', '', $opts[$i]);
 		  }
 		  // }}}
 

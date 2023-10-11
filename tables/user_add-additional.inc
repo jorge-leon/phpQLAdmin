@@ -141,36 +141,58 @@
 			 echo "            ".pql_templates_mark_importance(1);
 		}
 ?>
-            <?php if(!empty($error_text["userhost"])) { echo pql_format_error_span($error_text["userhost"]); }?>
-<?php	// 'retreive' all MX hosts
-		$MX_HOSTS = array(); // So that in_array() won't fail if there is no QLC hosts...
-		if(!empty($_REQUEST["userhost"]["qlc"])) {
+<?php   // We tackle one of two (or three (or four)):
+		
+		// Either we have a defaultMailHost attribute set locally or
+		// globally, then we just show it, and the user can alter it.
+		// or
+		// we have useControls set and we got some to choose from
+		// or
+		// we have useControls set and did not find any
+		// or
+		// we don't have useControls set and there is no defaultMailHost, then we
+		//   just let the user put it in.
+		
+		if(!empty($_REQUEST["host"])) { ?>
+	    <b><?php echo $LANG->_('User defined')?></b>:&nbsp;&nbsp;<input type="text" name="host" value="<?php echo $_REQUEST["host"]?>" size="40">
+<?php	          
+	       } elseif($_pql->get_attribute($_REQUEST["rootdn"], pql_get_define("PQL_ATTR_CONTROL_USE"))) { ?>
+<?php              if(!empty($error_text["mx"])) { echo pql_format_error_span($error_text["mx"]); }?>
+<?php	           // 'retreive' all MX hosts
+		   $MX_HOSTS = array(); // So that in_array() won't fail if there is no QLC hosts...
+		   if(!empty($_REQUEST["mx"]["qlc"])) {
 			// It's defined - QmailLDAP/Controls object
-			for($i=0; $i < count($_REQUEST["userhost"]["qlc"]); $i++)
-			  $MX_HOSTS[] = $_REQUEST["userhost"]["qlc"][$i];
-		}
+			for($i=0; $i < count($_REQUEST["mx"]["qlc"]); $i++)
+			    $MX_HOSTS[] = $_REQUEST["mx"]["qlc"][$i];
+		   }
 
-		if(!empty($_REQUEST["userhost"]["dns"]) and !in_array($_REQUEST["userhost"]["dns"], $MX_HOSTS))
-		  $MX_HOSTS[] = $_REQUEST["userhost"]["dns"];
+		   if(!empty($_REQUEST["mx"]["dns"]) and !in_array($_REQUEST["mx"]["dns"], $MX_HOSTS))
+		       $MX_HOSTS[] = $_REQUEST["mx"]["dns"];
 
 
-		// Show all MX hosts we know about
-		for($i=0; $i < count($MX_HOSTS); $i++) {
+		   // Show all MX hosts we know about
+		   for($i=0; $i < count($MX_HOSTS); $i++) {
 ?>
             <input type="hidden" name="host_<?php echo $i?>" value="<?php echo $MX_HOSTS[$i]?>">
-<?php		if($i >= 1) echo "&nbsp;&nbsp;"; ?>
+<?php		      if($i >= 1) echo "&nbsp;&nbsp;"; ?>
             <input type="radio"  name="host"   value="<?php echo $i?>"<?php if($i==0) { $checked = 1; ?> CHECKED<?php } ?>>
             <b><?php echo pql_maybe_idna_decode($MX_HOSTS[$i])?></b><br>
-<?php	}
+<?php	            }
 ?>
 
-<?php	if($i >= 1) echo "&nbsp;&nbsp;"; ?>
+<?php	           if($i >= 1) echo "&nbsp;&nbsp;"; ?>
             <input type="radio"  name="host"   value="<?php echo $i?>"<?php if(!$checked) { $checked = 1; ?> CHECKED<?php } ?>>
             <b><?php echo $LANG->_('User defined')?></b>:&nbsp;&nbsp;<input type="text" name="host_<?php echo $i?>" size="40">
             <input type="hidden" name="text_host" value="<?php echo $i?>">
+<?php  // if allowing mail server and useControl
+	       } else { ?>
+	    <b><?php echo $LANG->_('User defined')?></b>:&nbsp;&nbsp;<input type="text" name="host" size="40">
+
+<?php	       }
+           } // end mailHost
+?>
           </td>
         </tr>
-<?php } // if allowing mail server ?>
       </th>
     </table>
   

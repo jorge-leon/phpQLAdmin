@@ -219,7 +219,7 @@ function smtproutes_print_form() {
 		// Convert the DN into a host list
 		for($i=0; $i < count($hosts); $i++) {
 			$host = explode(',', $hosts[$i]);
-			$host = eregi_replace(pql_get_define("PQL_ATTR_CN") . "=", "", $host[0]);
+			$host = preg_replace(pql_get_define("PQL_ATTR_CN") . "=", "", $host[0]);
 			$newhosts[] = $host;
 		}
 

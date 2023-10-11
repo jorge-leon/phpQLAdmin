@@ -34,8 +34,8 @@ if(empty($_REQUEST["domain"]) && !empty($_REQUEST["user"])) {
 // }}}
 
 // {{{ Make sure we can have a ' in branch (also affects the user DN).
-$_REQUEST["user"]   = eregi_replace("\\\'", "'", $_REQUEST["user"]);
-$_REQUEST["domain"] = eregi_replace("\\\'", "'", $_REQUEST["domain"]);
+$_REQUEST["user"]   = preg_replace("/\\\'/", "'", $_REQUEST["user"]);
+$_REQUEST["domain"] = preg_replace("/\\\'/", "'", $_REQUEST["domain"]);
 // }}}
 
 // {{{ Forward back to users detail page

@@ -218,12 +218,12 @@ function attribute_save($type) {
 			$USER_IS_SAMBA = 1;
 		}
 		
-		if($USER_IS_SAMBA) {
+		if(is_setAndTrue($USER_IS_SAMBA)) {
 		  $nt = pql_password_hash($_REQUEST["userpassword"], '{ntpasswd}');
 		  pql_modify_attribute($_REQUEST["user"], pql_get_define("PQL_ATTR_SAMBANTPASSWORD"), 1, $nt);
 		}
 
-		if($_REQUEST["principal"] and extension_loaded('kadm5') and function_exists("kadm5_init_with_password") and
+		if(is_setAndTrue($_REQUEST, "principal") and extension_loaded('kadm5') and function_exists("kadm5_init_with_password") and
 		   ($_REQUEST["pwscheme"] == '{KERBEROS}'))
 		{
 		  if(kadmin_cpw($_REQUEST["principal"], $_REQUEST["userpassword"]))
@@ -231,9 +231,17 @@ function attribute_save($type) {
 		} else {
 		  // Change an 'ordinary' LDAP password
 		  $pw = pql_password_hash($_REQUEST["userpassword"], $_REQUEST["pwscheme"]);
-	
+
 		  if(pql_modify_attribute($_REQUEST["user"], pql_get_define("PQL_ATTR_PASSWD"), 1, $pw)) {
-			$expiredays = $_pql->get_attribute($_REQUEST['rootn'], pql_get_define("PQL_ATTR_DAYSUNTILEXPIRE"));
+  		    // leg20170515: test first, if we even have/use shadow passwords!
+		    // this test is quirky at best, if not plain wrong.  Should get attributes from user object instead.
+		    require ("./include/pql_templates.inc");
+		    $template_attribs = pql_templates_attributes("mailbox");
+		    if(pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_DAYSUNTILEXPIRE"))
+		       and pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_EXPIRATION"))
+		       and pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_PASSWORD_LASTCHANGED")) ) {
+
+			$expiredays = $_pql->get_attribute($_REQUEST['rootdn'], pql_get_define("PQL_ATTR_DAYSUNTILEXPIRE"));
 
 			// Since Password is changeing, I better update the shadowstuff also
 			if(isset($expiredays)) {
@@ -245,6 +253,9 @@ function attribute_save($type) {
 			}
 			
 			$success = 1;
+		    } else {
+		        $success = 1;
+		    }
 		  }
 		}
 

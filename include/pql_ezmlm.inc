@@ -732,7 +732,7 @@ class ezmlm {
 			$output = do_exec($command, $out, $res);
 			if($res != 0) {
 				// Failed to create list
-				$cmd = eregi_replace(" ",
+				$cmd = preg_replace(" ",
 									 " \\<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",
 									 $command);
 
@@ -963,7 +963,7 @@ class ezmlm {
 
 		if($res) {
 		  // Failed to subscribe user
-		  $cmd = eregi_replace(" ",
+		  $cmd = preg_replace(" ",
 							   " \\<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",
 							   $command);
 		  
@@ -1017,7 +1017,7 @@ class ezmlm {
 
 		if($res) {
 		  // Failed to unsubscribe user
-		  $cmd = eregi_replace(" ",
+		  $cmd = preg_replace(" ",
 							   " \\<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;",
 							   $command);
 		  

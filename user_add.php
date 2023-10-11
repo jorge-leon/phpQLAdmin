@@ -70,7 +70,14 @@ foreach($attribs as $key => $attrib) {
 
 	$$key = $value;
 }
+
+// leg20170512
+// some fallbacks to rootdn values
+if(empty($basehomedir)) $basehomedir = $_pql->get_attribute($_REQUEST["rootdn"],$attribs["basehomedir"]);
+if(empty($basemaildir)) $basemaildir = $_pql->get_attribute($_REQUEST["rootdn"],$attribs["basemaildir"]);
 // }}}
+
+
 
 if(empty($_REQUEST["page_curr"])) {
   $_REQUEST["page_curr"] = '';
@@ -138,7 +145,6 @@ function pql_user_add_retreive_encryption_schemes($template, $rootdn) {
 }
 // }}}
 
-
 // --------------- Verification and action(s).
 
 // {{{ Verify the input from the current page.  Autogen input for the next page.
@@ -165,6 +171,7 @@ switch($_REQUEST["page_curr"]) {
   // {{{ '':    Make sure a new user can be added OR that we autogenerate stuff for the very first page)
   case "":
 	if($_REQUEST["page_next"] == "one") {
+
 		// {{{ Verify/Create uid
 		// But only if:
 		// 1. We haven't specified this ourself (Hmmm, how could we!? We have not been given a choice before this! TODO)
@@ -202,15 +209,14 @@ switch($_REQUEST["page_curr"]) {
 		  }
 		}
 		// }}}
-		
+
 		// {{{ Verify/Create email address
 		if(empty($_REQUEST["mail"]) and $autocreatemailaddress and function_exists('user_generate_email') and
 		   pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAIL")))
 		{
 			// It's not supplied - generate one
 			$_REQUEST["mail"] = strtolower(user_generate_email($_REQUEST["uid"], "", "",
-																$_REQUEST["domain"], $_REQUEST["template"]));
-			
+									   $_REQUEST["domain"], $_REQUEST["template"]));			
 			if(preg_match("/ /", $_REQUEST["mail"]))
 			  // Replace spaces with underscore
 			  $_REQUEST["mail"] = preg_replace(" ", "_", $_REQUEST["mail"], -1);
@@ -287,6 +293,10 @@ switch($_REQUEST["page_curr"]) {
 	  $attrib_is_availible = 0;
 	  for($i=0; $i < count($templates); $i++) {
 		// NOTE/BUG (?): Orig: $templates[$i]. New: $template_attribs
+
+		if(!isset($template_attribs)) {
+		  $template_attribs =  pql_templates_attributes($templates[$i]["userobjectclass"]);
+		}
 		if(pql_templates_check_attribute($template_attribs,
 										 pql_get_define("PQL_CONF_REFERENCE_USERS_WITH",
 														$_REQUEST["rootdn"])))
@@ -457,36 +467,44 @@ switch($_REQUEST["page_curr"]) {
 			(empty($_REQUEST["mail"]) and
 			 pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAIL"), 'MUST'))))
 		{
-		  if(!preg_match("/@/", $_REQUEST["mail"])) {
+		    // leg20170511: this part was missing.  Should be
+		    // merged better do avoid additional stripping and
+		    // adding of the domain, but...
+		    if(empty($_REQUEST["mail"])) {
+			$domain = $lockdomainaddress ? $defaultdomain : $_REQUEST["domain"];
+			$_REQUEST["mail"] = strtolower(user_generate_email($_REQUEST["surname"], $_REQUEST["name"], $_REQUEST["subbranch"],
+									   $domain, $_REQUEST["template"]));
+		    }
+		    if(!preg_match("/@/", $_REQUEST["mail"])) {
 			if($_REQUEST["email_domain"])
-			  $_REQUEST["mail"] .= "@" . $_REQUEST["email_domain"];
+			    $_REQUEST["mail"] .= "@" . $_REQUEST["email_domain"];
 			else
-			  $_REQUEST["mail"] .= "@" . $defaultdomain;
+			    $_REQUEST["mail"] .= "@" . $defaultdomain;
 			
 			if(!pql_check_email($_REQUEST["mail"])) {
-			  $error = true;
-			  $error_text["mail"] = $LANG->_('Invalid');
+			    $error = true;
+			    $error_text["mail"] = $LANG->_('Invalid');
 			}
-		  } elseif($lockdomainaddress) {
+		    } elseif($lockdomainaddress) {
 			// There's an @ in the emailaddress, but we've specifically said that this isn't allowed. Remove
 			// the domain part and replace it with the default domain.
 			$tmp = preg_replace('/@.*/', '', $_REQUEST["mail"]);
 			$_REQUEST["mail"] = $tmp . "@" . $_REQUEST["email_domain"];
-		  }
+		    }
 		
-		  // It exists, it's valid. Does it already exists in the database?
-		  if(empty($error_text["mail"]) and pql_email_exists($_REQUEST["mail"])) {
+		    // It exists, it's valid. Does it already exists in the database?
+		    if(empty($error_text["mail"]) and pql_email_exists($_REQUEST["mail"])) {
 			$error = true;
 			$error_text["mail"] = pql_complete_constant($LANG->_('Mail address %address% already exists'),
-														 array("address" => '<i>'.$_REQUEST["mail"].'</i>'));
+								    array("address" => '<i>'.$_REQUEST["mail"].'</i>'));
 			unset($_REQUEST["mail"]);
-		  } elseif(!$lockdomainaddress) {
+		    } elseif(!$lockdomainaddress) {
 			// The mail address is perfectly ok, but if user specify an exact email address (which most
 			// likley don't match the email_domain we must change the email_domain request value for
 			// the rest of the checks to work correctly.
 			$tmp = explode('@', $_REQUEST["mail"]);
 			$_REQUEST["email_domain"] = $tmp[1];
-		  }
+		    }
 		}
 		// }}}
 
@@ -594,21 +612,30 @@ switch($_REQUEST["page_curr"]) {
 
 		// {{{ Generate the mailHost attribute/value
 		if(($_REQUEST["dosave"] != 'yes') and $_REQUEST["mail"] and
-		   pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILHOST")))
-		{
+		   pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILHOST"))) {
+		    // leg20170511: added the option to specify a default mailHost attribute per branch
+		    // this prevails the heuristic mx lookup
+		    $default_mailhost = $_pql->get_attribute($_REQUEST["domain"], pql_get_define("PQL_ATTR_DEFAULT_MAILHOST"));
+		    if(empty($default_mailhost)) {
+		    	$default_mailhost = $_pql->get_attribute($_REQUEST["rootdn"], pql_get_define("PQL_ATTR_DEFAULT_MAILHOST"));
+		    }
+		    if(!empty($default_mailhost)) {
+			$_REQUEST["host"] = $default_mailhost;
+		    } elseif($_pql->get_attribute($_REQUEST["rootdn"], pql_get_define("PQL_ATTR_CONTROL_USE")))  {
 			// Find MX (or QmailLDAP/Controls with locals=$email_domain)
 			$mx = pql_get_mx($_REQUEST["email_domain"]);
 			if(!$mx) {
-				if(!$error)
-				  // Only set this to 'mx' if it's not already set.
-				  // This so that the switch at the bottom won't break.
-				  $error = "mx";
+			    if(!$error)
+				// Only set this to 'mx' if it's not already set.
+				// This so that the switch at the bottom won't break.
+				$error = "mx";
 
-				$error_text["userhost"] = pql_complete_constant($LANG->_('Sorry, I can\'t find any MX or any QmailLDAP/Controls object that listens to the domain <u>%domain%</u>.<br>You will have to specify one manually.'),
-																array('domain' => pql_maybe_idna_decode($_REQUEST["email_domain"])));
+			    $error_text["mx"] = pql_complete_constant($LANG->_('Sorry, I can\'t find any MX or any QmailLDAP/Controls object that listens to the domain <u>%domain%</u>.<br>You will have to specify one manually.'),
+			    						    array('domain' => pql_maybe_idna_decode($_REQUEST["email_domain"])));
 			} else
-			  // We got a MX or QmailLDAP/Controls object. Use it.
-			  $_REQUEST["userhost"] = $mx;
+			    // We got a MX or QmailLDAP/Controls object. Use it.
+			    $_REQUEST["mx"] = $mx;
+		    }
 		}
 		// }}}
 
@@ -616,7 +643,8 @@ switch($_REQUEST["page_curr"]) {
 		// If email set and mailMessageStore is allowed
 		// or
 		// If email set and mailMessageStore is required
-		if(($_REQUEST["dosave"] != 'yes') and $_REQUEST["mail"] and
+		if(
+		   ($_REQUEST["dosave"] != 'yes') and $_REQUEST["mail"] and
 		   (pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILSTORE"))
 			or
 			pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILSTORE"), 'MUST')))
@@ -684,57 +712,61 @@ switch($_REQUEST["page_curr"]) {
 		// }}}
 
 		// {{{ Generate the home directory value
-		if(($_REQUEST["dosave"] != 'yes') and pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_HOMEDIR"), 'MUST')) {
-		  if(!empty($basehomedir)) {
+		// leg20170512: I need the homedir in my setup, but don't want to change the schema...
+		//   so: if I define the function, it means I want to create it.
+		if(($_REQUEST["dosave"] != 'yes') and pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_HOMEDIR"), 'MUST')
+		   or function_exists("user_generate_homedir")) {
+		    
+		    if(!empty($basehomedir)) {
 			if(function_exists("user_generate_homedir")) {
-			  if((pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID")))
-				 and $_REQUEST["uid"])
+			    if((pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID")))
+			       and $_REQUEST["uid"])
 				$reference = $_REQUEST["uid"];
-			  elseif($_REQUEST["surname"] and $_REQUEST["name"])
+			    elseif($_REQUEST["surname"] and $_REQUEST["name"])
 				$reference = $_REQUEST["surname"]." ".$_REQUEST["name"];
-			  elseif($_REQUEST["surname"])
+			    elseif($_REQUEST["surname"])
 				$reference = $_REQUEST["surname"];
-			  elseif($_REQUEST["name"])
+			    elseif($_REQUEST["name"])
 				$reference = $_REQUEST["name"];
-			  elseif($_REQUEST["mail"]) {
+			    elseif($_REQUEST["mail"]) {
 				$reference = explode('@', $_REQUEST["mail"]);
 				$reference = $reference[0];
-			  }
-			  
-			  $_REQUEST["homedirectory"] = user_generate_homedir($_REQUEST["mail"], $_REQUEST["domain"],
-																 array(pql_get_define("PQL_ATTR_UID") => $reference),
-																 'user');
+			    }
+			    
+			    $_REQUEST["homedirectory"] = user_generate_homedir(preg_replace('/@.*/', '', $_REQUEST["mail"]), $_REQUEST["domain"],
+									       array(pql_get_define("PQL_ATTR_UID") => $reference),
+									       'user');
 			} else {
-			  // Function user_generate_homedir() doesn't exists but we have a base home directory.
-			  // Try creating the home directory manually, using the username.
+			    // Function user_generate_homedir() doesn't exists but we have a base home directory.
+			    // Try creating the home directory manually, using the username.
 			  
-			  if(pql_get_define("PQL_CONF_ALLOW_ABSOLUTE_PATH", $_REQUEST["rootdn"])) {
+			    if(pql_get_define("PQL_CONF_ALLOW_ABSOLUTE_PATH", $_REQUEST["rootdn"])) {
 				// Absolute path is ok - create 'baseHomeDir/username/'
 				$ref = pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]);
 				if($_REQUEST[$ref]) {
-				  $_REQUEST["homedirectory"] = $basehomedir;
-				  if(!preg_match('/\/$/', $basehomedir))
+				    $_REQUEST["homedirectory"] = $basehomedir;
+				    if(!preg_match('/\/$/', $basehomedir))
 					$_REQUEST["homedirectory"] .= '/';
-				  $_REQUEST["homedirectory"] .= $_REQUEST[$ref]."/";
+				    $_REQUEST["homedirectory"] .= $_REQUEST[$ref]."/";
 				}
-			  } else
+			    } else
 				// We're not allowing an absolute path - don't use the baseHomeDir.
 				$_REQUEST["homedirectory"] = $_REQUEST["uid"]."/";
 			}
 			
 			if($_REQUEST["homedirectory"]) {
-			  // Replace space(s) with underscore(s)
-			  $_REQUEST["homedirectory"] = preg_replace('/ /', '_', $_REQUEST["homedirectory"], -1);
+			    // Replace space(s) with underscore(s)
+			    $_REQUEST["homedirectory"] = preg_replace('/ /', '_', $_REQUEST["homedirectory"], -1);
 
-			  // Replace double slashes with ONE slash...
-			  $_REQUEST["homedirectory"] = preg_replace('/\/\//', '/', $_REQUEST["homedirectory"], -1);
+			    // Replace double slashes with ONE slash...
+			    $_REQUEST["homedirectory"] = preg_replace('/\/\//', '/', $_REQUEST["homedirectory"], -1);
 			}
-		  } else {
+		    } else {
 			// Can't autogenerate!
 			$error_text["homedirectory"] = pql_complete_constant($LANG->_('Attribute <u>%what%</u> is missing. Can\'t autogenerate %type%'),
-																 array('what' => pql_get_define("PQL_ATTR_BASEHOMEDIR"), 
-																	   'type' => 'Path to homedirectory'));
-		  }
+									     array('what' => pql_get_define("PQL_ATTR_BASEHOMEDIR"), 
+										   'type' => 'Path to homedirectory'));
+		    }
 		}
 		// }}}
 
@@ -761,11 +793,12 @@ switch($_REQUEST["page_curr"]) {
 
   // {{{ 'two': Tripplecheck the mail host value
   case "two":
-	if($_REQUEST["mail"] and ($_REQUEST["page_next"] == 'save') and !isset($_REQUEST["host"]) and
-	   pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILHOST")))
+      if($_REQUEST["mail"] and ($_REQUEST["page_next"] == 'save')
+	 and !(isset($_REQUEST["host"]) or isset($_REQUEST_["mx"]))
+	 and pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILHOST")))
 	{
 	  $error = true;
-	  $error_text["userhost"] = $LANG->_('Missing');
+	  $error_text["host"] = $LANG->_('Missing');
 	  $_REQUEST["page_next"] = 'two';
 	}
 	break;

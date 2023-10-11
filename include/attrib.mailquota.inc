@@ -71,9 +71,12 @@ function attribute_init() {
 	  // Get default quota from domain
 	  $quota = $_pql->get_attribute($_REQUEST["domain"], pql_get_define("PQL_ATTR_BASEQUOTA"));
 	  if($quota) {
-		$tmp = explode(',', $quota);
-		$_REQUEST["maxsize"] = $tmp[0];
-		$_REQUEST["maxmails"] = $tmp[1];
+		//$tmp = explode(',', $quota);
+		//$_REQUEST["maxsize"] = $tmp[0];
+		//$_REQUEST["maxmails"] = $tmp[1];
+		$quota = pql_parse_quota($quota);
+		$_REQUEST["maxsize"] = $quota["maxsize"];
+		$_REQUEST["maxmails"] = $quota["maxmails"];
 
 		$_REQUEST["options"]  = "user";
 	  } else
@@ -118,7 +121,7 @@ function attribute_print_form($type = "modify") {
 
         <tr class="<?php pql_format_table(); ?>">
           <td class="title"><?php echo $LANG->_('Maximum size of mailbox')?></td>
-          <td><?php echo pql_format_error_span($error["maxsize"]); ?><input type="text" name="maxsize" value="<?php echo $_REQUEST["maxsize"]; ?>"> KB</td>
+          <td><?php echo pql_format_error_span($error["maxsize"]); ?><input type="text" name="maxsize" value="<?php echo $_REQUEST["maxsize"]/1024; ?>"> KB</td>
         </tr>
 
         <tr class="<?php pql_format_table(); ?>">
@@ -195,7 +198,7 @@ function attribute_save($type) {
 		  if($_SESSION["NEW_STYLE_QUOTA"]) {
 			// Set the new style quota values
 			if($_REQUEST["maxsize"])
-			  $mailquota[pql_get_define("PQL_ATTR_QUOTA_SIZE")]  = $_REQUEST["maxsize"];
+			  $mailquota[pql_get_define("PQL_ATTR_QUOTA_SIZE")]  = $_REQUEST["maxsize"] * 1024;
 			
 			if($_REQUEST["maxmails"] != "")
 			  $mailquota[pql_get_define("PQL_ATTR_QUOTA_COUNT")] = $_REQUEST["maxmails"];
@@ -205,7 +208,7 @@ function attribute_save($type) {
 
 		$msg = pql_complete_constant($LANG->_('Successfully changed %what% to %new%'),
 									 array('what' => $LANG->_('quota'),
-										   'new'  => pql_ldap_mailquota(array('maxsize'  => $_REQUEST["maxsize"] / 1024,
+										   'new'  => pql_ldap_mailquota(array('maxsize'  => $_REQUEST["maxsize"] * 1024,
 																			  'maxmails' => $_REQUEST["maxmails"]), 0)));
 		break;
 
@@ -301,12 +304,13 @@ function attribute_save($type) {
 			// Setup the array to send to LDAP server
 			$entry[pql_get_define("PQL_ATTR_BASEQUOTA")]      = '';
 			if($_REQUEST["maxsize"])
-			  $entry[pql_get_define("PQL_ATTR_BASEQUOTA")]   .= $_REQUEST["maxsize"];
+			  $entry[pql_get_define("PQL_ATTR_BASEQUOTA")]   .= $_REQUEST["maxsize"] * 1024 ."S";
 			if($_REQUEST["maxmails"])
-			  $entry[pql_get_define("PQL_ATTR_BASEQUOTA")]   .= ','.$_REQUEST["maxmails"];
+			  $entry[pql_get_define("PQL_ATTR_BASEQUOTA")]   .= ','.$_REQUEST["maxmails"]."C";
 
 			$entry[pql_get_define("PQL_ATTR_OBJECTCLASS")]    = pql_setup_branch_objectclasses(0, $domaindn, $_pql->ldap_linkid);
-			$entry[pql_get_define("PQL_ATTR_OBJECTCLASS")][]  = 'phpQLAdminConfig';
+			// if already present we get an ldap error here because of duplicate attribute.
+			//$entry[pql_get_define("PQL_ATTR_OBJECTCLASS")][]  = 'phpQLAdminConfig';
 
 			// We're setting default quota for domain, not user.
 			if(!pql_modify_attribute($_REQUEST["domain"], '', 1, $entry))

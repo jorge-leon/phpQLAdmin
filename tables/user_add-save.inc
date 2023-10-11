@@ -22,30 +22,30 @@ if(!empty($_REQUEST["uid"])) {
 // }}}
 
 // {{{ Add Firstname
-if((!empty($_REQUEST["surname"])
+if((!empty($_REQUEST["name"])
 	or ($_REQUEST["uid"]
 		and
 		pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID"))))
    and
    pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_GIVENNAME")))
 {
-  if(!empty($_REQUEST["surname"])) 
-	$entry[pql_get_define("PQL_ATTR_GIVENNAME")]	= $_REQUEST["surname"];
+  if(!empty($_REQUEST["name"])) 
+	$entry[pql_get_define("PQL_ATTR_GIVENNAME")]	= $_REQUEST["name"];
   elseif(pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID")))
 	$entry[pql_get_define("PQL_ATTR_GIVENNAME")]	= $_REQUEST["uid"];
 }
 // }}}
 
 // {{{ Add Lastname
-if((!empty($_REQUEST["name"])
+if((!empty($_REQUEST["surname"])
 	or ($_REQUEST["uid"]
 		and
 		pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID"))))
    and
    pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_SN")))
 {
-  if(!empty($_REQUEST["name"]))
-	$entry[pql_get_define("PQL_ATTR_SN")]			= $_REQUEST["name"];
+  if(!empty($_REQUEST["surname"]))
+	$entry[pql_get_define("PQL_ATTR_SN")]			= $_REQUEST["surname"];
   elseif(pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID")))
 	$entry[pql_get_define("PQL_ATTR_SN")]			= $_REQUEST["uid"];
 }
@@ -61,7 +61,7 @@ if(((((!empty($_REQUEST["surname"]) and !empty($_REQUEST["name"]))
    pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_SN")))
 {
   if(!empty($_REQUEST["surname"]) and !empty($_REQUEST["name"]))
-	$entry[pql_get_define("PQL_ATTR_CN")] = trim($_REQUEST["surname"]) . " " . trim($_REQUEST["name"]);
+	$entry[pql_get_define("PQL_ATTR_CN")] = trim($_REQUEST["name"]) . " " . trim($_REQUEST["surname"]);
   elseif(pql_get_define("PQL_CONF_REFERENCE_USERS_WITH", $_REQUEST["rootdn"]) == sprintf("%s", pql_get_define("PQL_ATTR_UID")))
 	$entry[pql_get_define("PQL_ATTR_CN")] = $_REQUEST["uid"];
 }
@@ -243,17 +243,23 @@ if(!empty($_REQUEST["mail"]) and isset($_REQUEST["host"]) and
    pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MAILHOST")))
 {
 	if(!empty($_REQUEST["host"]) or !empty($_REQUEST["text_host"])) {
-		// Is the manual input field set/used?
-		$nr = $_REQUEST["text_host"];
-		if(!empty($_REQUEST["host_".$nr]))
-		  $entry[pql_get_define("PQL_ATTR_MAILHOST")]       = $_REQUEST["host_".$nr];
-		else {
-			// ... no it isn't. Use the one that is.
-			$nr = $_REQUEST["host"];
-			$entry[pql_get_define("PQL_ATTR_MAILHOST")]       = $_REQUEST["host_".$nr];
+		// useControls style or defaultMailHost style?
+		if($_pql->get_attribute($_REQUEST["rootdn"], pql_get_define("PQL_ATTR_CONTROL_USE"))) {
+			// useControls give a list of hosts, which are selected by number
+			// Is the manual input field set/used?
+			$nr = $_REQUEST["text_host"];
+			if(!empty($_REQUEST["host_".$nr]))
+				$entry[pql_get_define("PQL_ATTR_MAILHOST")]       = $_REQUEST["host_".$nr];
+			else {
+				// ... no it isn't. Use the one that is.
+				$nr = $_REQUEST["host"];
+				$entry[pql_get_define("PQL_ATTR_MAILHOST")]       = $_REQUEST["host_".$nr];
+			}
+		} else {
+			$which = empty($_REQUEST["host"]) ? "text_host" : "host";
+			$entry[pql_get_define("PQL_ATTR_MAILHOST")]       = $_REQUEST[$which];
 		}
 	}
-	
 	if(empty($_SESSION["NEW_STYLE_QUOTA"]) and
 	   pql_templates_check_attribute($template_attribs, pql_get_define("PQL_ATTR_MODE")))
 	  // The new QmailLDAP have a changed 'deliveryMode' setup.

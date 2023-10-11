@@ -140,10 +140,12 @@ function pql_generate_button($buttons, $link = '', $url = '') {
   $i=0; // A button counter.
   foreach($buttons as $view => $text) {
 	// Generate the button link etc
-	if(($view == $_REQUEST["view"]) or ($text == $_REQUEST["cat"]))
+	if(($view == $_REQUEST["view"]) or (isset($_REQUEST["cat"]) and ($text == $_REQUEST["cat"])))
 	  $mark = "&mark=yes";
 	else
-	  unset($mark);
+	  $mark = "";
+// leg20170513 was:
+//	  unset($mark);
 ?>
       <a href="<?php echo $url?>view=<?php echo $view?><?php if($link) { echo "&$link"; } ?>"><img alt="// <?php echo $LANG->_($text)?> \\" vspace="0" hspace="0" border="0" src="tools/navbutton.php?label=<?php echo urlencode($LANG->_($text)); ?><?php echo $mark?>"></a>
 <?php
@@ -566,7 +568,7 @@ function pql_left_htmlify_userlist($rootdn, $domain, $subbranch, $users, &$links
 	  else
 	    $cn = explode(" ", $cn);
 	  
-	  if(!$cn[1]) {
+	  if(!isset($cn[1])) {
 	    // Don't have second part (last name) of the commonName - MUST be a system 'user'.
 	    $cns[$dn] = "System - ".$cn[0];
 	  } else {
@@ -956,12 +958,12 @@ function pql_format_normalize_dn($dn) {
 
 // {{{ pql_parse_quota(quota_string)
 function pql_parse_quota($quota_string) {
-  $quota = '';
+  $quota = array();
   
   // get max bytes
   preg_match("/([0-9]*)S/", $quota_string, $matches);
   if(isset($matches[1])) {
-	$quota["maxsize"] = intval($matches[1] / 1024);
+	$quota["maxsize"] = intval($matches[1]);
 	
 	// get max mails
 	preg_match("/([0-9]*)C/", $quota_string, $matches);
@@ -970,7 +972,7 @@ function pql_parse_quota($quota_string) {
 	// The quota value isn't correct. Whing it!
 	// Asume that the value in there is SIZE, and set AMOUNT to 0
 	// ('should mean' unlimited if I remember correctly).
-	return(array($quota_string, "0"));
+	return(["maxsize" => $quota_string, "maxmails" => "0"]);
   
   return $quota;
 }
@@ -987,7 +989,7 @@ function pql_parse_quota($quota_string) {
 function pql_ldap_mailquota($quota, $newline = 1) {
   global $LANG;
   
-  if($quota["maxmails"] == "")
+  if($quota["maxmails"] == "" or $quota["maxmails"] == "0")
 	$txt = $LANG->_('Unlimited amount');
   else
 	$txt = pql_complete_constant($LANG->_('Max %maxmails% mails'), array("maxmails" => $quota["maxmails"]));
@@ -1001,7 +1003,7 @@ function pql_ldap_mailquota($quota, $newline = 1) {
   if($quota["maxsize"] == "")
 	$txt .= $LANG->_('Unlimited size');
   else
-	$txt .= pql_complete_constant($LANG->_('Max %maxsize% KB'), array("maxsize" => $quota["maxsize"]));
+	$txt .= pql_complete_constant($LANG->_('Max %maxsize% KB'), array("maxsize" => $quota["maxsize"]/1024));
   
   return $txt;
 }

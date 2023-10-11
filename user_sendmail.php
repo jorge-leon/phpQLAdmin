@@ -5,6 +5,11 @@
 require("./include/pql_session.inc");
 require($_SESSION["path"]."/include/pql_config.inc");
 
+// leg20170515: for sending a test email from a user detail listing this is
+//   severely broken.  We have no access to the session variables, so everything else
+//   is not available either.  For now I hardcoded the test message and fumbled the
+//   cn out of the user dn, which will NOT work in other scenario then mine.
+
 $_pql = new pql($_SESSION["USER_HOST"], $_SESSION["USER_DN"], $_SESSION["USER_PASS"]);
 
 include($_SESSION["path"]."/header.html");
@@ -17,12 +22,18 @@ if(!$_pql->get_dn($_REQUEST["user"], '(objectclass=*)', 'BASE')) {
     exit();
 }
 
-if($email == "") {
+if(!empty($email) and $_REQUEST["email"] == "") {
     die($LANG->_('No email address given'));
 }
 
-$subject = pql_get_define("PQL_ATTR_TESTMAIL_SUBJECT");
-$from = "From: " . pql_get_define("PQL_ATTR_HOSTMASTER") . "\n";
+if(!isset($email)) $email = $_REQUEST["email"];
+
+$rootdn = $_SESSION["BASE_DN"][0];
+
+//$subject = pql_get_define("PQL_CONF_TESTMAIL_SUBJECT");
+$subject = "Test Email";
+$from = "From: " .  $_pql->get_attribute($rootdn, pql_get_define("PQL_ATTR_HOSTMASTER")) . "\n";
+
 $xmailer = "X-Mailer: phpQLAdmin ".$_SESSION["VERSION"]."\n";
 $vars['MAIL'] = $email;
 $vars['UID'] = $_REQUEST["user"];
@@ -56,8 +67,19 @@ if (is_array($quota)) {
     }
 }
 	
-$message = pql_complete_constant(pql_get_define("PQL_CONF_TESTMAIL_MAILTEXT"), $vars);
-	
+//$message = pql_complete_constant(pql_get_define("PQL_CONF_TESTMAIL_MAILTEXT"), $vars);
+$vars["CN"] = explode("=", explode(",", $_REQUEST["user"])[0])[1];
+$msg_tpl = "hi %cn%,
+
+your email address '%mail%' seems to work.
+
+have a nice day,
+
+your administrator
+
+";
+$message = pql_complete_constant($msg_tpl, $vars);
+
 $header = $from . $xmailer;
 
 // we are in 'auto-send' mode and have already a message from another function
@@ -68,12 +90,13 @@ if (!empty($msg)) {
 }
 
 if(mail($email, $subject, $message, $header)){
-    $msg .= pql_complete_constant($LANG->_('Successfully sended mail to %email%"'), array("email" => $email));
+    $msg .= pql_complete_constant($LANG->_('Successfully sent mail to %email%"'), array("email" => $email));
 } else {
     $msg .= $LANG->_('Failed sending mail');
 }
 
-$url = "user_detail.php?domain=".$_REQUEST["domain"]."&user=".urlencode($_REQUEST["user"])."&msg=".urlencode($msg);
+$domain = is_setAndTrue($_REQUEST, "domain") ? $_REQUEST["domain"] : "";
+$url = "user_detail.php?domain=".$domain."&user=".urlencode($_REQUEST["user"])."&msg=".urlencode($msg);
 if(isset($_REQUEST["rlnb"]))
      $url .= "&rlnb=".$_REQUEST["rlnb"];
 pql_header($url);

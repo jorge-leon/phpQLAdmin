@@ -24,6 +24,7 @@
 
 				// DLW: This should be sorted on DisplayName, not cn.
 				$cn     = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_CN"));
+				
 				if(is_array($cn)) $cn = $cn[0];
 
 				$uidnr  = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_QMAILUID"));
@@ -37,6 +38,7 @@
 					// Get registered addresses for this user
 					$email   = $_pql->get_attribute($user, pql_get_define("PQL_ATTR_MAIL"));
 					$tmp     = explode('@', $email);
+										
 					$mail    = $tmp[0].'@'.pql_maybe_idna_decode($tmp[1]);
 
 					if($mail)

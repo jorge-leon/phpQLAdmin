@@ -122,8 +122,8 @@ class pql_lang {
 		if(($entry == ".") or ($entry == "..") or ($entry == "CVS"))
 		  continue;
 		
-		$entry = eregi_replace("lang\.", "", $entry);
-		$entry = eregi_replace("\.inc", "", $entry);
+		$entry = preg_replace("lang\.", "", $entry);
+		$entry = preg_replace("\.inc", "", $entry);
 		
 		$this->_supported[$entry] = $entry;
 	  }

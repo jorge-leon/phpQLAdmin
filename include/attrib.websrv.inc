@@ -133,7 +133,7 @@ function attribute_save($action) {
 			// It is an LDAP URI - urlencode.
 			
 			// Extract the path 
-			$uri = eregi_replace('ldapi://', '', $_REQUEST[$attrib]);
+			$uri = preg_replace('ldapi://', '', $_REQUEST[$attrib]);
 			$_REQUEST[$attrib] = 'ldapi://' . urlencode($uri);
 		}
 

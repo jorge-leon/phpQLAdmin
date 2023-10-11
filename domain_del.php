@@ -12,7 +12,7 @@ $domain = $_REQUEST["domain"];
 // }}}
 
 // {{{ Make sure we can have a ' in branch
-$domain = eregi_replace("\\\'", "'", $domain);
+$domain = preg_replace("\\\'", "'", $domain);
 $domain = urldecode($domain);
 // }}}
 ?>

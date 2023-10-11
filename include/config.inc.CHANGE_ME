@@ -375,8 +375,8 @@ pql_set_define("PQL_CONF_USE_TLS", false);
 function user_generate_uid($surname, $name, $email, $domain, $account_type) {
 	//	return(pql_get_next_username($domain));			// Use prefix from branch to generate UID.
 	//	return($email);									// Complete email address
-	//	return(eregi_replace('@', '%',$email));			// complete email-address but '%' instead of '@'
-	//	return(eregi_replace('@', '_',$email));			// complete email-address but '_' instead of '@'
+	//	return(preg_replace('@', '%',$email));			// complete email-address but '%' instead of '@'
+	//	return(preg_replace('@', '_',$email));			// complete email-address but '_' instead of '@'
 	//	return($surname . $name);						// "Firstname Lastname"
 	//	return(substr($surname, 0, 1) . $name);			// First character of ther surname + complete lastname
 }

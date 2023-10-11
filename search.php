@@ -109,7 +109,7 @@ switch($_REQUEST["filter_type"]) {
 if(!$_SESSION["SINGLE_USER"]) {
 	// {{{ Admin of some sort - look in the whole database for a user that matches filter
 	foreach($_SESSION["BASE_DN"] as $dn) {
-		if($_REQUEST["debug"]) {
+		if(is_setAndTrue($_REQUEST, "debug")) {
 ?>
   <table cellspacing="0" cellpadding="3" border="0">
 	<th colspan="4" align="left"><h5><u><?php echo $LANG->_('Search filter debugging')?></u></h5>

@@ -31,7 +31,7 @@ if(is_array($spamassassin)) {
 			if($values[2]) {
 				if($tag == 'subject_tag') {
 					// More than one value, but spaces is ok/required.
-					$_REQUEST[$tag] = eregi_replace("subject_tag ", "", $spamassassin[$i]);
+					$_REQUEST[$tag] = preg_replace("subject_tag ", "", $spamassassin[$i]);
 				} elseif($tag == 'add_header') {
 					// Convert into a three dimensional array
 					unset($tmp);
